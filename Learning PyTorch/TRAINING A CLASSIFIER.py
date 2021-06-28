@@ -18,12 +18,12 @@ print(transform)
 batch_size = 4
 
 train_dataset = torchvision.datasets.CIFAR10(root='./data',
-                                             download=True,
+                                             download=False,
                                              train=True,
                                              transform=transform)
 
 test_dataset = torchvision.datasets.CIFAR10(root='./data',
-                                            download=True,
+                                            download=False,
                                             train=False,
                                             transform=transform)
 
@@ -53,6 +53,9 @@ def imshow(img):
 # get some random training images
 dataiter = iter(train_dataloader)
 images, labels = dataiter.next()
+print(dataiter)
+print(images)
+print(labels)
 
 # show images
 imshow(torchvision.utils.make_grid(images))
@@ -92,7 +95,7 @@ loss_fn = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
 # 4. Train the network
-for epoch in range(2):
+for epoch in range(5):
     running_loss = 0.0
     for i, data in enumerate(train_dataloader, 0):
         inputs, labels = data  # get the inputs; data is a list of [inputs, labels]
@@ -110,7 +113,6 @@ for epoch in range(2):
         if i % 2000 == 1999: # print every 2000 mini batch
             print(f'{epoch+1, i+1}, loss: {running_loss/2000}')
             running_loss = 0.0
-
 print('Finished Training')
 
 # Save the model
@@ -118,3 +120,55 @@ PATH = './cifar_net.pth'
 torch.save(net.state_dict(), PATH)
 
 # 5. Test the network on the test data
+dataiter = iter(test_dataloader)
+images, labels = dataiter.next()
+
+# print images
+imshow(torchvision.utils.make_grid(images))
+print('GroundTruth: ', ' '.join('%5s' % classes[labels[j]] for j in range(4)))
+
+net = Net()
+net.load_state_dict(torch.load(PATH))
+outputs = net(images)
+
+_, predicted = torch.max(outputs, 1)
+print(predicted)
+print('Predicted: ', ' '.join('%5s' %classes[predicted[j]] for j in range(4)))
+
+"""
+Let us look at how the network performs on the whole dataset.
+"""
+correct = 0
+total = 0
+# since we are not training, we dont need to calculate the gradients for our outputs
+with torch.no_grad():
+    for data in test_dataloader:
+        images, labels = data
+        outputs = net(images)
+        _, predicted = torch.max(outputs.data, 1)
+        total += labels.size(0)
+        correct += (predicted==labels).sum().item()
+print('Accuracy of the network on the 10000 test images: %d %%' %(100*correct/total))
+
+""""
+what are the classes that performed well, and the classes that did not perform well:
+"""
+# prepare to count predictions for each class
+correct_pred = {classname: 0 for classname in classes}
+total_pred = {classname: 0 for classname in classes}
+
+# again no gradients method
+with torch.no_grad:
+    for data in test_dataloader:
+        images, labels = data
+        outputs = net(images)
+        _, predictions = torch.max(outputs, 1)
+        for label, prediction in zip(labels, predictions):
+            if label == prediction:
+                 correct_pred[classes[label]] +=1
+            total_pred[classes[label]]+=1
+
+# print accuracy for each class
+for classname, correct_count in correct_pred.items():
+    accuracy = 100 * float(correct_count) / total_pred[classname]
+    print("Accuracy for class {:5s} is: {:.1f} %".format(classname,accuracy))
