@@ -158,7 +158,7 @@ correct_pred = {classname: 0 for classname in classes}
 total_pred = {classname: 0 for classname in classes}
 
 # again no gradients method
-with torch.no_grad:
+with torch.no_grad():
     for data in test_dataloader:
         images, labels = data
         outputs = net(images)
