@@ -1,7 +1,6 @@
 import torch
 from sklearn.model_selection import train_test_split
 from sklearn.datasets import make_classification
-from sklearn.metrics import  roc_auc_score
 
 class CustomDataset:
     def __init__(self, data, targets):
